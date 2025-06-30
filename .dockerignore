@@ -1,0 +1,104 @@
+# Git 관련
+.git
+.gitignore
+README.md
+
+# Python 관련
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+.tox
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.log
+.pytest_cache
+
+# 가상환경
+venv/
+env/
+ENV/
+
+# IDE 관련
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# 로컬 개발 파일들
+.env
+.env.local
+.env.development
+.env.test
+
+# 로그 및 임시 파일
+logs/
+*.log
+tmp/
+temp/
+
+# 메모리 데이터 (개발용)
+memory_data/
+backups/
+
+# 테스트 관련
+htmlcov/
+.coverage
+.pytest_cache/
+tests/__pycache__/
+
+# 문서 및 예시
+docs/
+examples/
+screenshots/
+
+# 빌드 및 배포 관련
+build/
+dist/
+*.tar.gz
+*.zip
+
+# 운영체제 관련
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Docker 관련
+docker-compose.override.yml
+docker-compose.*.yml
+!docker-compose.yml
+
+# 설정 파일 백업
+*.bak
+*.backup
+
+# 아바타 비디오 파일 (용량이 큰 경우)
+# static/videos/*.mp4
+# static/videos/*.webm
+
+# 사용자 업로드 파일
+uploads/
+user_data/
+
+# 보안 관련
+ssl/
+certificates/
+keys/
+*.pem
+*.key
+*.crt
+
+# 모니터링 데이터
+prometheus_data/
+grafana_data/
+
+# 기타
+node_modules/
+*.pid

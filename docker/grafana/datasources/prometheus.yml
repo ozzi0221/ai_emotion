@@ -1,0 +1,47 @@
+apiVersion: 1
+
+datasources:
+  - name: Prometheus
+    type: prometheus
+    access: proxy
+    url: http://prometheus:9090
+    isDefault: true
+    editable: true
+    orgId: 1
+    version: 1
+    uid: prometheus-uid
+    jsonData:
+      httpMethod: POST
+      manageAlerts: true
+      prometheusType: Prometheus
+      prometheusVersion: 2.40.0
+      cacheLevel: 'High'
+      disableRecordingRules: false
+      incrementalQueryOverlapWindow: 10m
+      exemplarTraceIdDestinations:
+        - name: trace_id
+          url: http://localhost:16686/trace/${__value.raw}
+          urlDisplayLabel: 'View in Jaeger'
+
+  # InfluxDB 데이터소스 (선택적)
+  # - name: InfluxDB
+  #   type: influxdb
+  #   access: proxy
+  #   url: http://influxdb:8086
+  #   database: avatar_metrics
+  #   user: admin
+  #   secureJsonData:
+  #     password: admin_password
+  #   isDefault: false
+  #   editable: true
+
+  # Elasticsearch 데이터소스 (로그 분석용, 선택적)
+  # - name: Elasticsearch
+  #   type: elasticsearch
+  #   access: proxy
+  #   url: http://elasticsearch:9200
+  #   database: avatar-logs-*
+  #   interval: Daily
+  #   timeField: '@timestamp'
+  #   isDefault: false
+  #   editable: true
