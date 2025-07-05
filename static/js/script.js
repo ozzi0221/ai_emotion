@@ -7,7 +7,16 @@ let currentUtterance = null;
 let eventSource = null;
 let ttsQueue = [];
 let isProcessingTTS = false;
-let isAvatarSpeaking = false; // 아바타 상태 추적용
+let isAvatarSpeaking = false;
+
+// iOS 감지 및 호환성 관리
+let isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+let isIOSChrome = isIOS && /CriOS/.test(navigator.userAgent);
+let isIOSSafari = isIOS && /Safari/.test(navigator.userAgent) && !/CriOS/.test(navigator.userAgent);
+
+// 음성 기능 지원 여부 확인
+let speechRecognitionSupported = false;
+let speechSynthesisSupported = false;
 
 // 설정값들
 let voiceSettings = {
@@ -36,29 +45,123 @@ const elements = {
 
 // 페이지 로드 시 초기화
 document.addEventListener('DOMContentLoaded', function() {
+    detectDeviceCapabilities();
     initializeApp();
     setupEventListeners();
     initializeSpeechRecognition();
+    initializeSpeechSynthesis();
     loadSettings();
     checkVideoFiles();
+    showIOSNoticeIfNeeded();
 });
+
+// 디바이스 기능 감지
+function detectDeviceCapabilities() {
+    console.log('디바이스 정보:', {
+        userAgent: navigator.userAgent,
+        isIOS: isIOS,
+        isIOSChrome: isIOSChrome,
+        isIOSSafari: isIOSSafari
+    });
+
+    // Speech Recognition 지원 여부 확인
+    speechRecognitionSupported = ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) && !isIOS;
+    
+    // Speech Synthesis 지원 여부 확인
+    speechSynthesisSupported = 'speechSynthesis' in window;
+    
+    console.log('음성 기능 지원:', {
+        speechRecognition: speechRecognitionSupported,
+        speechSynthesis: speechSynthesisSupported
+    });
+}
+
+// iOS 사용자에게 안내 메시지 표시
+function showIOSNoticeIfNeeded() {
+    if (isIOS) {
+        const noticeDiv = document.createElement('div');
+        noticeDiv.id = 'iosNotice';
+        noticeDiv.className = 'ios-notice';
+        noticeDiv.innerHTML = `
+            <div class="notice-content">
+                <div class="notice-header">
+                    <i class="fas fa-info-circle"></i>
+                    <h3>iOS 사용자 안내</h3>
+                    <button onclick="hideIOSBrowserNotice()" class="close-notice">×</button>
+                </div>
+                <div class="notice-body">
+                    <p><strong>음성 인식:</strong> iOS에서는 보안상 음성 인식이 제한됩니다. 텍스트로 입력해주세요.</p>
+                    <p><strong>음성 출력:</strong> ${speechSynthesisSupported ? 
+                        '지원됩니다. 화면을 터치하여 음성을 활성화해주세요.' : 
+                        '일부 제한이 있을 수 있습니다.'}</p>
+                    <div class="notice-actions">
+                        ${speechSynthesisSupported ? 
+                            '<button onclick="activateIOSSpeech()" class="activate-speech-btn"><i class="fas fa-volume-up"></i> 음성 활성화</button>' : 
+                            ''}
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(noticeDiv);
+        
+        // 3초 후 자동으로 숨기기 (음성 출력이 지원되는 경우)
+        if (speechSynthesisSupported) {
+            setTimeout(() => {
+                noticeDiv.style.opacity = '0.8';
+            }, 5000);
+        }
+    }
+}
+
+// iOS 안내 숨기기
+function hideIOSBrowserNotice() {
+    const notice = document.getElementById('iosNotice');
+    if (notice) {
+        notice.remove();
+    }
+}
+
+// iOS 음성 활성화 (사용자 제스처로 음성 초기화)
+function activateIOSSpeech() {
+    if (isIOS && speechSynthesisSupported) {
+        // 더미 음성으로 TTS 엔진 초기화
+        const dummyUtterance = new SpeechSynthesisUtterance(' ');
+        dummyUtterance.volume = 0.01;
+        dummyUtterance.rate = 10;
+        
+        speechSynthesis.speak(dummyUtterance);
+        
+        // 초기화 완료 표시
+        const activateBtn = document.querySelector('.activate-speech-btn');
+        if (activateBtn) {
+            activateBtn.innerHTML = '<i class="fas fa-check"></i> 음성 활성화 완료';
+            activateBtn.disabled = true;
+            activateBtn.style.backgroundColor = '#28a745';
+        }
+        
+        console.log('iOS 음성 엔진 초기화 완료');
+        
+        // 3초 후 안내 메시지 숨기기
+        setTimeout(() => {
+            hideIOSBrowserNotice();
+        }, 2000);
+    }
+}
 
 // 비디오 파일 존재 확인
 function checkVideoFiles() {
     const video = elements.avatarVideo;
     
-    // 비디오 로드 이벤트
     video.addEventListener('loadeddata', function() {
         console.log('아바타 비디오 로드 완료');
     });
     
-    // 비디오 에러 이벤트
     video.addEventListener('error', function() {
         console.log('비디오 파일이 없습니다. 대체 화면을 표시합니다.');
         showAvatarFallback('idle');
     });
     
-    // 초기 비디오 재생 시도
     playIdleVideo();
 }
 
@@ -67,7 +170,6 @@ function initializeApp() {
     console.log('회상치료 AI 아바타 시작');
     updateStatus('대기 중');
     
-    // 웰컴 메시지 애니메이션
     setTimeout(() => {
         const welcomeMessage = document.querySelector('.welcome-message');
         if (welcomeMessage) {
@@ -79,8 +181,19 @@ function initializeApp() {
 
 // 이벤트 리스너 설정
 function setupEventListeners() {
-    // 마이크 버튼
-    elements.micBtn.addEventListener('click', toggleSpeechRecognition);
+    // 마이크 버튼 - iOS에서는 비활성화
+    if (speechRecognitionSupported) {
+        elements.micBtn.addEventListener('click', toggleSpeechRecognition);
+    } else {
+        elements.micBtn.style.opacity = '0.5';
+        elements.micBtn.style.cursor = 'not-allowed';
+        elements.micBtn.title = isIOS ? 'iOS에서는 음성 인식이 지원되지 않습니다' : '이 브라우저는 음성 인식을 지원하지 않습니다';
+        elements.micBtn.addEventListener('click', function() {
+            if (isIOS) {
+                showIOSVoiceAlert('음성 인식은 iOS에서 지원되지 않습니다. 텍스트로 입력해주세요.');
+            }
+        });
+    }
     
     // 스피커 버튼
     elements.speakerBtn.addEventListener('click', toggleSpeaker);
@@ -88,7 +201,7 @@ function setupEventListeners() {
     // 전송 버튼
     elements.sendBtn.addEventListener('click', sendMessage);
     
-    // 입력 필드 엔터키
+    // 입력 필드
     elements.messageInput.addEventListener('keypress', function(e) {
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
@@ -96,21 +209,49 @@ function setupEventListeners() {
         }
     });
     
-    // 대화 초기화 버튼
-    elements.clearBtn.addEventListener('click', clearChat);
+    // iOS에서 입력 필드 포커스 시 안내
+    if (isIOS) {
+        elements.messageInput.addEventListener('focus', function() {
+            const placeholder = '텍스트로 대화해보세요. 예: "어린 시절 고향 이야기 들려주세요"';
+            if (this.placeholder.includes('음성')) {
+                this.placeholder = placeholder;
+            }
+        });
+    }
     
-    // 설정 버튼
+    elements.clearBtn.addEventListener('click', clearChat);
     elements.settingsBtn.addEventListener('click', openSettingsModal);
     
-    // 모달 외부 클릭 시 닫기
     window.addEventListener('click', function(e) {
         if (e.target.classList.contains('modal')) {
             closeModal(e.target);
         }
     });
     
-    // 설정 슬라이더 이벤트
     setupSettingsListeners();
+}
+
+// iOS 음성 관련 알림
+function showIOSVoiceAlert(message) {
+    const alertDiv = document.createElement('div');
+    alertDiv.className = 'ios-voice-alert';
+    alertDiv.innerHTML = `
+        <div class="alert-content">
+            <i class="fas fa-exclamation-triangle"></i>
+            <p>${message}</p>
+        </div>
+    `;
+    
+    document.body.appendChild(alertDiv);
+    
+    setTimeout(() => {
+        alertDiv.classList.add('show');
+    }, 100);
+    
+    setTimeout(() => {
+        alertDiv.classList.remove('show');
+        setTimeout(() => alertDiv.remove(), 300);
+    }, 3000);
 }
 
 // 설정 관련 이벤트 리스너
@@ -144,52 +285,96 @@ function setupSettingsListeners() {
     }
 }
 
-// 음성 인식 초기화
+// 음성 인식 초기화 (iOS 제외)
 function initializeSpeechRecognition() {
-    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
-        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        speechRecognition = new SpeechRecognition();
+    if (!speechRecognitionSupported) {
+        console.warn('음성 인식이 지원되지 않습니다.');
+        return;
+    }
+    
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    speechRecognition = new SpeechRecognition();
+    
+    speechRecognition.continuous = false;
+    speechRecognition.interimResults = false;
+    speechRecognition.lang = 'ko-KR';
+    
+    speechRecognition.onstart = function() {
+        isListening = true;
+        updateStatus('듣고 있습니다', 'listening');
+        elements.micBtn.classList.add('active');
+        showAudioVisualizer();
+    };
+    
+    speechRecognition.onresult = function(event) {
+        const transcript = event.results[0][0].transcript;
+        elements.messageInput.value = transcript;
+        sendMessage();
+    };
+    
+    speechRecognition.onend = function() {
+        isListening = false;
+        updateStatus('대기 중');
+        elements.micBtn.classList.remove('active');
+        hideAudioVisualizer();
+    };
+    
+    speechRecognition.onerror = function(event) {
+        console.error('음성 인식 오류:', event.error);
+        isListening = false;
+        updateStatus('대기 중');
+        elements.micBtn.classList.remove('active');
+        hideAudioVisualizer();
+    };
+}
+
+// 음성 합성 초기화 및 iOS 최적화
+function initializeSpeechSynthesis() {
+    if (!speechSynthesisSupported) {
+        console.warn('음성 합성이 지원되지 않습니다.');
+        elements.speakerBtn.style.display = 'none';
+        return;
+    }
+    
+    // iOS에서 음성 목록 로드
+    if (isIOS) {
+        // iOS에서는 speechSynthesis.getVoices()가 비동기적으로 로드됨
+        let voices = speechSynthesis.getVoices();
+        if (voices.length === 0) {
+            speechSynthesis.addEventListener('voiceschanged', function() {
+                voices = speechSynthesis.getVoices();
+                console.log('iOS 음성 목록 로드됨:', voices.length, '개');
+                
+                // 한국어 음성 선택
+                const koreanVoice = voices.find(voice => 
+                    voice.lang.includes('ko') || voice.name.includes('Yuna')
+                );
+                if (koreanVoice) {
+                    voiceSettings.voice = koreanVoice;
+                    console.log('한국어 음성 선택:', koreanVoice.name);
+                }
+            });
+        } else {
+            const koreanVoice = voices.find(voice => 
+                voice.lang.includes('ko') || voice.name.includes('Yuna')
+            );
+            if (koreanVoice) {
+                voiceSettings.voice = koreanVoice;
+            }
+        }
         
-        speechRecognition.continuous = false;
-        speechRecognition.interimResults = false;
-        speechRecognition.lang = 'ko-KR';
-        
-        speechRecognition.onstart = function() {
-            isListening = true;
-            updateStatus('듣고 있습니다', 'listening');
-            elements.micBtn.classList.add('active');
-            showAudioVisualizer();
-        };
-        
-        speechRecognition.onresult = function(event) {
-            const transcript = event.results[0][0].transcript;
-            elements.messageInput.value = transcript;
-            sendMessage();
-        };
-        
-        speechRecognition.onend = function() {
-            isListening = false;
-            updateStatus('대기 중');
-            elements.micBtn.classList.remove('active');
-            hideAudioVisualizer();
-        };
-        
-        speechRecognition.onerror = function(event) {
-            console.error('음성 인식 오류:', event.error);
-            isListening = false;
-            updateStatus('대기 중');
-            elements.micBtn.classList.remove('active');
-            hideAudioVisualizer();
-        };
-    } else {
-        console.warn('이 브라우저는 음성 인식을 지원하지 않습니다.');
-        elements.micBtn.style.display = 'none';
+        // iOS에서 음성 재생 최적화
+        voiceSettings.rate = Math.max(0.5, Math.min(voiceSettings.rate, 2.0));
+        voiceSettings.pitch = Math.max(0.5, Math.min(voiceSettings.pitch, 2.0));
     }
 }
 
 // 음성 인식 토글
 function toggleSpeechRecognition() {
-    if (!speechRecognition) return;
+    if (!speechRecognitionSupported || !speechRecognition) {
+        showIOSVoiceAlert('음성 인식을 사용할 수 없습니다.');
+        return;
+    }
     
     if (isListening) {
         speechRecognition.stop();
@@ -212,6 +397,12 @@ function toggleSpeaker() {
     } else {
         elements.speakerBtn.classList.add('active');
         elements.speakerBtn.innerHTML = '<i class="fas fa-volume-up"></i><span class="btn-text">음성 출력</span>';
+        
+        // iOS에서 처음 활성화할 때 안내
+        if (isIOS && !localStorage.getItem('iosVoiceActivated')) {
+            showIOSVoiceAlert('음성이 활성화되었습니다. 대화 응답을 들으실 수 있어요.');
+            localStorage.setItem('iosVoiceActivated', 'true');
+        }
     }
 }
 
@@ -220,14 +411,10 @@ function sendMessage() {
     const message = elements.messageInput.value.trim();
     if (!message) return;
     
-    // 사용자 메시지 추가
     addMessage(message, 'user');
     elements.messageInput.value = '';
     
-    // 로딩 표시
     showLoading();
-    
-    // 서버에 메시지 전송
     sendToServer(message);
 }
 
@@ -268,7 +455,6 @@ function sendToServer(message) {
             reader.read().then(({ done, value }) => {
                 if (done) {
                     if (currentMessageElement) {
-                        // 모든 TTS가 끝났을 때 idle 상태로 전환
                         setTimeout(() => {
                             if (ttsQueue.length === 0 && !isProcessingTTS) {
                                 updateStatus('대기 중');
@@ -298,7 +484,7 @@ function sendToServer(message) {
                                     fullResponse += data.content + ' ';
                                     messageContent.innerHTML = '<p>' + fullResponse + '</p>';
                                     
-                                    // TTS 큐에 추가 (여기서는 상태 변경 안 함)
+                                    // TTS 큐에 추가
                                     if (elements.speakerBtn.classList.contains('active')) {
                                         addToTTSQueue(data.content);
                                     }
@@ -430,7 +616,6 @@ function showEmotionIndicator(emotion) {
     
     emotionIndicator.classList.add('show');
     
-    // 3초 후 숨기기
     setTimeout(() => {
         emotionIndicator.classList.remove('show');
     }, 3000);
@@ -453,14 +638,13 @@ function analyzeResponseForEmotion(text) {
         }
     }
     
-    return 'warm'; // 기본값
+    return 'warm';
 }
 
 // 유튜브 검색
 function searchYouTube(query) {
     const youtubeSearchUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`;
     
-    // 모달에 검색 링크와 설명 표시
     const youtubeContainer = document.getElementById('youtubeContainer');
     youtubeContainer.innerHTML = `
         <div class="youtube-search-container">
@@ -487,19 +671,20 @@ function searchYouTube(query) {
 
 // TTS 큐에 추가
 function addToTTSQueue(text) {
+    if (!speechSynthesisSupported) return;
+    
     ttsQueue.push(text);
     if (!isProcessingTTS) {
         processTTSQueue();
     }
 }
 
-// TTS 큐 처리 - 비디오 동기화 개선
+// iOS 최적화된 TTS 큐 처리
 function processTTSQueue() {
     if (ttsQueue.length === 0) {
         isProcessingTTS = false;
         isSpeaking = false;
         
-        // TTS 큐가 완전히 비었을 때만 idle 상태로 전환
         setTimeout(() => {
             if (ttsQueue.length === 0 && !isProcessingTTS) {
                 updateStatus('대기 중');
@@ -512,8 +697,27 @@ function processTTSQueue() {
     isProcessingTTS = true;
     const text = ttsQueue.shift();
     
+    // iOS에서 이전 음성 정리
     if (speechSynthesis.speaking) {
         speechSynthesis.cancel();
+        
+        // iOS에서는 cancel 후 짧은 대기 시간 필요
+        if (isIOS) {
+            setTimeout(() => {
+                speakText(text);
+            }, 150);
+            return;
+        }
+    }
+    
+    speakText(text);
+}
+
+// iOS 최적화된 음성 출력
+function speakText(text) {
+    if (!speechSynthesisSupported) {
+        setTimeout(() => processTTSQueue(), 300);
+        return;
     }
     
     currentUtterance = new SpeechSynthesisUtterance(text);
@@ -522,48 +726,95 @@ function processTTSQueue() {
     currentUtterance.pitch = voiceSettings.pitch;
     currentUtterance.volume = voiceSettings.volume;
     
-    // 음성 시작 시 speaking 비디오로 전환
+    // iOS에서 한국어 음성 설정
+    if (isIOS && voiceSettings.voice) {
+        currentUtterance.voice = voiceSettings.voice;
+    }
+    
+    // iOS 특화 설정
+    if (isIOS) {
+        // iOS에서 더 안정적인 설정값 사용
+        currentUtterance.rate = Math.max(0.5, Math.min(currentUtterance.rate, 1.5));
+        currentUtterance.pitch = Math.max(0.8, Math.min(currentUtterance.pitch, 1.2));
+    }
+    
     currentUtterance.onstart = function() {
-        console.log('TTS 시작 - speaking 비디오로 전환');
+        console.log('TTS 시작:', text.substring(0, 20) + '...');
         isSpeaking = true;
         updateStatus('말하고 있습니다', 'speaking');
         playSpeakingVideo();
     };
     
-    // 음성 종료 시 다음 큐 처리
     currentUtterance.onend = function() {
-        console.log('TTS 종료 - 다음 큐 처리');
+        console.log('TTS 종료');
         isSpeaking = false;
         
-        // 잠시 대기 후 다음 큐 처리
+        // iOS에서는 더 긴 대기 시간 필요
+        const delay = isIOS ? 500 : 300;
         setTimeout(() => {
             processTTSQueue();
-        }, 300);
+        }, delay);
     };
     
     currentUtterance.onerror = function(event) {
         console.error('TTS 오류:', event);
         isSpeaking = false;
-        setTimeout(() => {
-            processTTSQueue();
-        }, 300);
+        
+        // iOS에서 오류 발생 시 재시도 로직
+        if (isIOS && event.error === 'interrupted' && ttsQueue.length > 0) {
+            console.log('iOS TTS 인터럽트 - 재시도');
+            setTimeout(() => {
+                processTTSQueue();
+            }, 800);
+        } else {
+            setTimeout(() => {
+                processTTSQueue();
+            }, 300);
+        }
     };
     
-    console.log('TTS 시작:', text);
-    speechSynthesis.speak(currentUtterance);
+    // iOS에서 음성 재생 전 추가 체크
+    if (isIOS) {
+        // speechSynthesis가 paused 상태인 경우 resume
+        if (speechSynthesis.paused) {
+            speechSynthesis.resume();
+        }
+        
+        // iOS에서 음성 재생 전 짧은 대기
+        setTimeout(() => {
+            try {
+                speechSynthesis.speak(currentUtterance);
+            } catch (error) {
+                console.error('iOS TTS 재생 오류:', error);
+                setTimeout(() => processTTSQueue(), 500);
+            }
+        }, 100);
+    } else {
+        speechSynthesis.speak(currentUtterance);
+    }
 }
 
-// 음성 정지
+// 음성 정지 (iOS 최적화)
 function stopSpeaking() {
     console.log('음성 정지');
+    
     if (speechSynthesis.speaking) {
         speechSynthesis.cancel();
     }
+    
+    // iOS에서 더 확실한 정지를 위한 추가 처리
+    if (isIOS) {
+        setTimeout(() => {
+            if (speechSynthesis.speaking) {
+                speechSynthesis.cancel();
+            }
+        }, 100);
+    }
+    
     ttsQueue = [];
     isProcessingTTS = false;
     isSpeaking = false;
     
-    // 즉시 idle 상태로 전환
     updateStatus('대기 중');
     playIdleVideo();
 }
@@ -576,7 +827,7 @@ function updateStatus(text, type = 'idle') {
     elements.statusIndicator.className = `status-indicator ${type}`;
 }
 
-// 아바타 비디오 제어 - 개선된 버전
+// 아바타 비디오 제어
 function playIdleVideo() {
     console.log('Idle 비디오 재생');
     const video = elements.avatarVideo;
@@ -586,7 +837,6 @@ function playIdleVideo() {
     
     video.play().catch(e => {
         console.log('비디오 재생 오류:', e);
-        // 비디오 파일이 없으면 정적 이미지로 대체
         showAvatarFallback('idle');
     });
 }
@@ -600,7 +850,6 @@ function playSpeakingVideo() {
     
     video.play().catch(e => {
         console.log('비디오 재생 오류:', e);
-        // 비디오 파일이 없으면 정적 이미지로 대체
         showAvatarFallback('speaking');
     });
 }
@@ -623,11 +872,9 @@ function showAvatarFallback(state) {
             </div>
         `;
         
-        // 비디오 숨기고 fallback 표시
         elements.avatarVideo.style.display = 'none';
         avatarContainer.appendChild(fallbackDiv);
     } else {
-        // 기존 fallback 상태 업데이트
         const placeholder = existingFallback.querySelector('.avatar-placeholder');
         const statusText = existingFallback.querySelector('.avatar-status');
         
@@ -657,7 +904,6 @@ function hideLoading() {
 // 채팅 초기화
 function clearChat() {
     if (confirm('대화 기록을 모두 삭제하시겠습니까?')) {
-        // 음성 정지
         stopSpeaking();
         
         elements.chatContainer.innerHTML = `
@@ -688,7 +934,6 @@ function clearChat() {
             </div>
         `;
         
-        // 서버에 초기화 요청
         fetch('/clear_history', {
             method: 'POST',
             headers: {
@@ -736,7 +981,6 @@ function loadSettings() {
     if (saved) {
         voiceSettings = { ...voiceSettings, ...JSON.parse(saved) };
         
-        // UI 업데이트
         const speedSlider = document.getElementById('voiceSpeed');
         const pitchSlider = document.getElementById('voicePitch');
         const volumeSlider = document.getElementById('voiceVolume');
@@ -758,8 +1002,10 @@ function loadSettings() {
     }
 }
 
-// 전역 함수로 export (HTML에서 사용)
+// 전역 함수로 export
 window.sendQuickMessage = sendQuickMessage;
 window.searchYouTube = searchYouTube;
 window.closeYoutubeModal = closeYoutubeModal;
 window.closeSettingsModal = closeSettingsModal;
+window.hideIOSBrowserNotice = hideIOSBrowserNotice;
+window.activateIOSSpeech = activateIOSSpeech;
