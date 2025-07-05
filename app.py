@@ -78,7 +78,7 @@ SYSTEM_PROMPT = """당신은 고령자, 특히 치매 예방과 정서 케어를
 
 # 설정값들
 CONFIG = {
-    'MAX_HISTORY': int(os.getenv('MAX_CONVERSATION_HISTORY', 10)),
+    'MAX_HISTORY': int(os.getenv('MAX_CONVERSATION_HISTORY', 4)),
     'RESPONSE_MAX_SENTENCES': int(os.getenv('RESPONSE_MAX_SENTENCES', 3)),
     'STREAMING_DELAY': float(os.getenv('STREAMING_DELAY', 0.1)),
     'AVATAR_IDLE_VIDEO': os.getenv('AVATAR_IDLE_VIDEO', 'avatar_idle.mp4'),
