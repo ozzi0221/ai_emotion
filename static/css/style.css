@@ -938,3 +938,566 @@ body {
     color: #ff6b9d;
     font-size: 1rem;
 }
+
+/* iOS STT 호환성을 위한 CSS 스타일 */
+
+/* iOS 대체 마이크 버튼 스타일 */
+.control-btn.ios-fallback {
+    background: linear-gradient(135deg, #3498db, #2980b9);
+    color: white;
+}
+
+.control-btn.ios-fallback:hover {
+    background: linear-gradient(135deg, #2980b9, #1f5f8b);
+    transform: translateY(-2px);
+}
+
+/* iOS 브라우저 안내 */
+.ios-browser-notice {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1002;
+    background: rgba(52, 152, 219, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    padding: 25px;
+    color: white;
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+    max-width: 90%;
+    width: 380px;
+    opacity: 0;
+    transform: translateX(-50%) translateY(-20px);
+    transition: all 0.3s ease;
+}
+
+.ios-browser-notice.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+}
+
+.ios-browser-notice.hide {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-20px);
+}
+
+.ios-browser-notice .notice-content {
+    text-align: center;
+}
+
+.ios-browser-notice .notice-content i {
+    font-size: 48px;
+    margin-bottom: 15px;
+    color: #ecf0f1;
+    animation: bounce 2s infinite;
+}
+
+.ios-browser-notice .notice-content h3 {
+    font-size: 1.4rem;
+    margin-bottom: 10px;
+    font-weight: 600;
+}
+
+.ios-browser-notice .notice-content p {
+    margin: 10px 0 20px 0;
+    font-size: 1rem;
+    line-height: 1.4;
+    opacity: 0.9;
+}
+
+.notice-buttons {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    margin-top: 15px;
+}
+
+.notice-btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 25px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    font-size: 0.9rem;
+}
+
+.notice-btn.primary {
+    background: rgba(255, 255, 255, 0.9);
+    color: #3498db;
+}
+
+.notice-btn.primary:hover {
+    background: white;
+    transform: translateY(-2px);
+}
+
+.notice-btn.secondary {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.4);
+}
+
+.notice-btn.secondary:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: translateY(-2px);
+}
+
+/* iOS 마이크 권한 가이드 */
+.ios-mic-guide {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0.8);
+    z-index: 1003;
+    background: rgba(46, 204, 113, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    padding: 30px;
+    color: white;
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+    text-align: center;
+    opacity: 0;
+    transition: all 0.3s ease;
+    max-width: 90%;
+    width: 300px;
+}
+
+.ios-mic-guide.show {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+}
+
+.ios-mic-guide .guide-content i {
+    font-size: 48px;
+    margin-bottom: 15px;
+    color: #ecf0f1;
+    animation: pulse 2s infinite;
+}
+
+.ios-mic-guide .guide-content p {
+    font-size: 1.1rem;
+    margin: 10px 0;
+    font-weight: 600;
+}
+
+.ios-mic-guide .guide-content small {
+    font-size: 0.9rem;
+    opacity: 0.8;
+    display: block;
+    margin-top: 10px;
+    line-height: 1.3;
+}
+
+/* 오류 메시지 스타일 */
+.error-message {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 1004;
+    background: rgba(231, 76, 60, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 15px;
+    padding: 20px;
+    color: white;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    max-width: 90%;
+    width: 350px;
+    opacity: 0;
+    transform: translateX(20px);
+    transition: all 0.3s ease;
+}
+
+.error-message.show {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+.error-message.hide {
+    opacity: 0;
+    transform: translateX(20px);
+}
+
+.error-message .error-content {
+    display: flex;
+    align-items: flex-start;
+    gap: 15px;
+}
+
+.error-message .error-content i {
+    font-size: 24px;
+    color: #ecf0f1;
+    margin-top: 2px;
+    flex-shrink: 0;
+}
+
+.error-message .error-content p {
+    margin: 0 0 15px 0;
+    font-size: 0.95rem;
+    line-height: 1.4;
+    flex: 1;
+}
+
+.error-message .close-error {
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: white;
+    padding: 8px 16px;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    align-self: flex-end;
+    font-size: 0.9rem;
+}
+
+.error-message .close-error:hover {
+    background: rgba(255, 255, 255, 0.3);
+    border-color: rgba(255, 255, 255, 0.5);
+}
+
+/* 애니메이션 */
+@keyframes bounce {
+    0%, 20%, 50%, 80%, 100% {
+        transform: translateY(0);
+    }
+    40% {
+        transform: translateY(-10px);
+    }
+    60% {
+        transform: translateY(-5px);
+    }
+}
+
+/* iOS Safari 특화 스타일 */
+@supports (-webkit-touch-callout: none) {
+    /* iOS에서 입력 필드 확대 방지 */
+    input[type="text"] {
+        font-size: 16px !important;
+    }
+    
+    /* iOS에서 버튼 터치 하이라이트 제거 */
+    .control-btn, .suggestion-btn, .notice-btn {
+        -webkit-tap-highlight-color: transparent;
+        -webkit-touch-callout: none;
+        -webkit-user-select: none;
+        user-select: none;
+    }
+    
+    /* iOS에서 스크롤 바운스 효과 */
+    .chat-container {
+        -webkit-overflow-scrolling: touch;
+    }
+}
+
+/* 모바일 환경에서 향상된 터치 반응 */
+@media (max-width: 768px) {
+    .control-btn {
+        min-height: 44px; /* iOS 권장 터치 타겟 크기 */
+        padding: 12px 16px;
+    }
+    
+    .suggestion-btn {
+        min-height: 44px;
+        padding: 12px 16px;
+    }
+    
+    .input-container input {
+        font-size: 16px; /* iOS 줌 방지 */
+        padding: 12px 50px 12px 15px;
+    }
+    
+    /* iOS에서 모달 위치 조정 */
+    .ios-browser-notice {
+        top: 10px;
+        width: calc(100% - 40px);
+        max-width: none;
+    }
+    
+    .error-message {
+        top: 10px;
+        right: 10px;
+        left: 10px;
+        width: auto;
+        max-width: none;
+    }
+    
+    .ios-mic-guide {
+        width: calc(100% - 40px);
+        max-width: none;
+    }
+}
+
+/* 아이폰 X 이상의 노치 대응 */
+@media (max-width: 768px) and (orientation: portrait) {
+    .container {
+        padding-top: env(safe-area-inset-top);
+        padding-bottom: env(safe-area-inset-bottom);
+    }
+    
+    .ios-browser-notice {
+        top: calc(env(safe-area-inset-top) + 10px);
+    }
+    
+    .error-message {
+        top: calc(env(safe-area-inset-top) + 10px);
+    }
+}
+
+/* iOS 호환성 개선을 위한 추가 스타일 */
+
+/* iOS 안내 메시지 */
+.ios-notice {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    z-index: 10000;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    animation: slideDownNotice 0.5s ease-out;
+    font-family: 'Noto Sans KR', sans-serif;
+}
+
+.notice-content {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 15px 20px;
+}
+
+.notice-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+}
+
+.notice-header h3 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.notice-header i {
+    font-size: 18px;
+    color: #ffd700;
+}
+
+.close-notice {
+    background: rgba(255,255,255,0.2);
+    border: none;
+    color: white;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    font-size: 18px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.3s;
+}
+
+.close-notice:hover {
+    background: rgba(255,255,255,0.3);
+}
+
+.notice-body p {
+    margin: 8px 0;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.notice-body strong {
+    color: #ffd700;
+}
+
+.notice-actions {
+    margin-top: 15px;
+    text-align: center;
+}
+
+.activate-speech-btn {
+    background: #28a745;
+    border: none;
+    color: white;
+    padding: 12px 24px;
+    border-radius: 25px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.3s;
+    box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+}
+
+.activate-speech-btn:hover {
+    background: #218838;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(40, 167, 69, 0.4);
+}
+
+.activate-speech-btn:disabled {
+    background: #6c757d;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.activate-speech-btn i {
+    font-size: 16px;
+}
+
+/* iOS 음성 알림 */
+.ios-voice-alert {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(0,0,0,0.9);
+    color: white;
+    padding: 20px 30px;
+    border-radius: 15px;
+    z-index: 10001;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    max-width: 90%;
+    text-align: center;
+}
+
+.ios-voice-alert.show {
+    opacity: 1;
+}
+
+.ios-voice-alert .alert-content {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.ios-voice-alert i {
+    color: #ffc107;
+    font-size: 20px;
+}
+
+.ios-voice-alert p {
+    margin: 0;
+    font-size: 14px;
+    line-height: 1.4;
+}
+
+/* 마이크 버튼 비활성화 상태 */
+.control-btn:disabled,
+.control-btn[style*="cursor: not-allowed"] {
+    opacity: 0.5;
+    cursor: not-allowed !important;
+    background: #6c757d !important;
+}
+
+.control-btn:disabled:hover,
+.control-btn[style*="cursor: not-allowed"]:hover {
+    background: #6c757d !important;
+    transform: none !important;
+    box-shadow: 0 2px 10px rgba(108, 117, 125, 0.2) !important;
+}
+
+/* iOS에서 입력 필드 개선 */
+@supports (-webkit-touch-callout: none) {
+    .message-input {
+        font-size: 16px; /* iOS에서 zoom 방지 */
+        appearance: none;
+        -webkit-appearance: none;
+        border-radius: 12px;
+    }
+    
+    .control-btn {
+        -webkit-tap-highlight-color: transparent;
+        touch-action: manipulation;
+    }
+}
+
+/* 애니메이션 */
+@keyframes slideDownNotice {
+    from {
+        transform: translateY(-100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+/* 반응형 - 모바일 기기에서 안내 메시지 */
+@media (max-width: 768px) {
+    .ios-notice {
+        font-size: 14px;
+    }
+    
+    .notice-content {
+        padding: 12px 15px;
+    }
+    
+    .notice-header h3 {
+        font-size: 15px;
+    }
+    
+    .notice-body p {
+        font-size: 13px;
+    }
+    
+    .activate-speech-btn {
+        padding: 10px 20px;
+        font-size: 13px;
+    }
+    
+    .ios-voice-alert {
+        max-width: 85%;
+        padding: 15px 20px;
+    }
+    
+    .ios-voice-alert .alert-content {
+        flex-direction: column;
+        gap: 8px;
+    }
+    
+    .ios-voice-alert p {
+        font-size: 13px;
+    }
+}
+
+/* iOS Safari 특화 스타일 */
+@media screen and (-webkit-min-device-pixel-ratio: 2) {
+    .control-btn {
+        -webkit-transform: translateZ(0);
+        transform: translateZ(0);
+    }
+    
+    .avatar-video {
+        -webkit-transform: translateZ(0);
+        transform: translateZ(0);
+    }
+}
+
+/* 터치 기기를 위한 버튼 크기 조정 */
+@media (pointer: coarse) {
+    .control-btn {
+        min-height: 48px;
+        min-width: 120px;
+    }
+    
+    .suggestion-btn {
+        min-height: 44px;
+        padding: 12px 16px;
+    }
+    
+    .youtube-btn,
+    .youtube-link-btn {
+        min-height: 44px;
+    }
+}
